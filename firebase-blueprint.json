@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "DailyEntry": {
+      "title": "Daily Tiredness Entry",
+      "description": "Records tiredness and energy metrics for a specific day.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who owns this entry." },
+        "date": { "type": "string", "format": "date", "description": "The date of the entry in YYYY-MM-DD format." },
+        "morning": {
+          "type": "object",
+          "properties": {
+            "recovery": { "type": "number", "description": "Perceived recovery from 1-10." },
+            "energy": { "type": "number", "description": "Perceived energy from 1-10." },
+            "mood": { "type": "number", "description": "Mood rating from 1-5 (Smileys)." },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          }
+        },
+        "noon": {
+          "type": "object",
+          "properties": {
+            "tiredness": { "type": "number", "description": "Perceived tiredness from 1-10." },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          }
+        },
+        "evening": {
+          "type": "object",
+          "properties": {
+            "tiredness": { "type": "number", "description": "Perceived tiredness from 1-10." },
+            "strenuousness": { "type": "number", "description": "Perceived strenuousness of the day from 1-10." },
+            "mood": { "type": "number", "description": "Mood rating from 1-5 (Smileys)." },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          }
+        }
+      },
+      "required": ["userId", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/entries/{date}": {
+      "schema": "DailyEntry",
+      "description": "User specific daily tiredness logs."
+    }
+  }
+}

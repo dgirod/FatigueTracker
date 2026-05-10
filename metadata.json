@@ -1,0 +1,6 @@
+{
+  "name": "Müdigkeits-Tracker",
+  "description": "Ein intelligentes Tagesbuch zur Erfassung von Müdigkeit, Erholung und Energie für ein besseres Wohlbefinden.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
