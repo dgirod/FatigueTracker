@@ -40,7 +40,9 @@ export function Dashboard() {
     energie: e.morning?.energy || 0,
     erholung: e.morning?.recovery || 0,
     anstrengung: e.evening?.strenuousness || 0,
-    mood: e.evening?.mood || e.morning?.mood || 0
+    morningMood: e.morning?.mood || 0,
+    noonMood: e.noon?.mood || 0,
+    eveningMood: e.evening?.mood || 0
   }));
 
   const smileys = ['', '😞', '🙁', '😐', '🙂', '😊'];
@@ -180,7 +182,7 @@ export function Dashboard() {
             </motion.div>
 
             <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] border border-[#E5E5DC] shadow-sm">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-natural-muted mb-10 text-center">Stimmungs-Radar</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-natural-muted mb-10 text-center">Stimmungsverlauf vom Tag anzeigen</h3>
               <div className="grid grid-cols-4 md:grid-cols-7 gap-4">
                 {chartData.map((d, i) => (
                   <motion.div 
@@ -193,8 +195,19 @@ export function Dashboard() {
                     <span className="text-[10px] font-bold text-natural-muted uppercase">
                       {i === chartData.length - 1 ? 'Heute' : d.date}
                     </span>
-                    <div className={`w-full aspect-square rounded-[2rem] flex items-center justify-center text-3xl transition-all ${d.mood ? 'bg-natural-bg border border-[#E5E5DC] shadow-inner' : 'bg-gray-50 border border-dashed border-gray-200 opacity-20 scale-90'}`}>
-                      {d.mood ? smileys[d.mood] : '—'}
+                    <div className="flex flex-col gap-2 w-full p-2 bg-natural-bg/30 rounded-[2rem] border border-[#E5E5DC]/50 shadow-inner">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-[8px] font-black text-natural-muted/60 uppercase tracking-tighter">Morg</span>
+                        <span className="text-xl">{d.morningMood ? smileys[d.morningMood] : '—'}</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 border-y border-[#E5E5DC]/50 py-1">
+                        <span className="text-[8px] font-black text-natural-muted/60 uppercase tracking-tighter">Mitt</span>
+                        <span className="text-xl">{d.noonMood ? smileys[d.noonMood] : '—'}</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-[8px] font-black text-natural-muted/60 uppercase tracking-tighter">Abnd</span>
+                        <span className="text-xl">{d.eveningMood ? smileys[d.eveningMood] : '—'}</span>
+                      </div>
                     </div>
                   </motion.div>
                 ))}

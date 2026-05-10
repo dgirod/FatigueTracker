@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, LayoutDashboard, CalendarPlus, BarChart2 } from 'lucide-react';
+import { LogOut, LayoutDashboard, CalendarPlus, BarChart2, Activity } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,12 +16,11 @@ export function Layout({ children, activeView, setView }: LayoutProps) {
       <header className="fixed top-0 w-full bg-natural-bg/80 backdrop-blur-md border-b border-[#E5E5DC] z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-natural-accent flex items-center justify-center text-white text-lg shadow-sm">
-              🌿
+            <div className="w-10 h-10 rounded-full bg-natural-accent flex items-center justify-center text-white shadow-sm">
+              <Activity size={20} strokeWidth={2.5} />
             </div>
             <div>
               <h1 className="text-xl font-serif font-medium text-[#5C634D] leading-tight">Müdigkeits-Tracker</h1>
-              <p className="text-[10px] uppercase tracking-widest text-natural-muted font-bold">Klarheit & Natur</p>
             </div>
           </div>
           

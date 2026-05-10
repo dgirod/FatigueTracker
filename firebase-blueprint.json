@@ -20,6 +20,7 @@
           "type": "object",
           "properties": {
             "tiredness": { "type": "number", "description": "Perceived tiredness from 1-10." },
+            "mood": { "type": "number", "description": "Mood rating from 1-5 (Smileys)." },
             "updatedAt": { "type": "string", "format": "date-time" }
           }
         },

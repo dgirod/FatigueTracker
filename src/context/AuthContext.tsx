@@ -27,8 +27,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login failed", error);
+    } catch (error: any) {
+      console.error("Login failed detailed error:", error);
+      if (error.code === 'auth/unauthorized-domain') {
+        alert(`Domain nicht autorisiert! 
+        
+Aktuelle Domain: ${window.location.hostname}
+        
+Bitte füge diese Domain in der Firebase Console unter Authentifizierung -> Einstellungen -> Autorisierte Domains hinzu.`);
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        // Normal if user closes it, but if it happens instantly, it's a config issue
+        alert("Das Login-Fenster wurde geschlossen. Wenn dies sofort passiert ist, prüfe bitte, ob deine Domain in Firebase autorisiert ist.");
+      } else {
+        alert("Anmeldung fehlgeschlagen: " + error.message);
+      }
     }
   };
 

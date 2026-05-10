@@ -40,7 +40,7 @@ export function CheckIn({ onComplete }: CheckInProps) {
   });
 
   const [morningData, setMorningData] = useState({ recovery: 5, energy: 5, mood: 3 });
-  const [noonData, setNoonData] = useState({ tiredness: 5 });
+  const [noonData, setNoonData] = useState({ tiredness: 5, mood: 3 });
   const [eveningData, setNoonEveningData] = useState({ tiredness: 5, strenuousness: 5, mood: 3 });
   const [submitting, setSubmitting] = useState(false);
   const [existingData, setExistingData] = useState<any>(null);
@@ -119,18 +119,18 @@ export function CheckIn({ onComplete }: CheckInProps) {
     }
   };
 
-  const MoodRating = ({ value, onChange, label }: any) => {
+  const MoodRating = ({ value, onChange, label, compact = false }: any) => {
     const smileys = ['😞', '🙁', '😐', '🙂', '😊'];
     return (
-      <div className="space-y-4 mb-10">
+      <div className={`space-y-4 ${compact ? 'flex-1' : 'mb-10'}`}>
         <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-natural-muted text-center">{label}</span>
-        <div className="flex justify-between items-center bg-white p-6 rounded-[2.5rem] shadow-sm border border-[#E5E5DC]">
+        <div className={`flex justify-between items-center bg-white rounded-[2.5rem] shadow-sm border border-[#E5E5DC] ${compact ? 'p-3 gap-1' : 'p-6'}`}>
           {smileys.map((smiley, index) => (
             <button
               key={index}
               onClick={() => onChange(index + 1)}
-              className={`text-3xl transition-all duration-300 ${
-                value === index + 1 ? 'scale-150 grayscale-0' : 'grayscale opacity-30 hover:opacity-100 hover:grayscale-0 scale-100'
+              className={`transition-all duration-300 ${compact ? 'text-xl' : 'text-3xl'} ${
+                value === index + 1 ? 'scale-125 grayscale-0' : 'grayscale opacity-30 hover:opacity-100 hover:grayscale-0 scale-100'
               }`}
             >
               {smiley}
@@ -236,6 +236,30 @@ export function CheckIn({ onComplete }: CheckInProps) {
         />
       </div>
 
+      <div className="bg-white/40 p-6 rounded-[3rem] border border-[#E5E5DC]/50 backdrop-blur-sm mb-12">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-natural-muted text-center mb-6">Deine Stimmung im Tagesverlauf</h3>
+        <div className="flex flex-col md:flex-row gap-6">
+          <MoodRating 
+            label="Morgen" 
+            value={morningData.mood} 
+            onChange={(v: number) => setMorningData({ ...morningData, mood: v })} 
+            compact
+          />
+          <MoodRating 
+            label="Mittag" 
+            value={noonData.mood} 
+            onChange={(v: number) => setNoonData({ ...noonData, mood: v })} 
+            compact
+          />
+          <MoodRating 
+            label="Abend" 
+            value={eveningData.mood} 
+            onChange={(v: number) => setNoonEveningData({ ...eveningData, mood: v })} 
+            compact
+          />
+        </div>
+      </div>
+
       <motion.div
         key={activeStep}
         initial={{ opacity: 0, scale: 0.98 }}
@@ -244,11 +268,6 @@ export function CheckIn({ onComplete }: CheckInProps) {
       >
         {activeStep === 'morning' && (
           <>
-            <MoodRating 
-              label="Wie fühlst du dich heute morgen?" 
-              value={morningData.mood} 
-              onChange={(v: number) => setMorningData({ ...morningData, mood: v })} 
-            />
             <Slider 
               label="Dein Erholungs-Status" 
               value={morningData.recovery} 
@@ -275,11 +294,6 @@ export function CheckIn({ onComplete }: CheckInProps) {
 
         {activeStep === 'evening' && (
           <>
-            <MoodRating 
-              label="Wie fühlst du dich am Ende des Tages?" 
-              value={eveningData.mood} 
-              onChange={(v: number) => setNoonEveningData({ ...eveningData, mood: v })} 
-            />
             <Slider 
               label="Deine Müdigkeit am Abend" 
               value={eveningData.tiredness} 

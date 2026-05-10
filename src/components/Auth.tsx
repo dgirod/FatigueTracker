@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'motion/react';
-import { LogIn } from 'lucide-react';
+import { LogIn, Activity } from 'lucide-react';
 
 export function Auth() {
   const { signIn } = useAuth();
@@ -12,15 +12,15 @@ export function Auth() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full bg-white p-14 rounded-[3rem] shadow-sm border border-[#E5E5DC] text-center"
       >
-        <div className="w-20 h-20 bg-natural-morning rounded-3xl flex items-center justify-center mx-auto mb-10 overflow-hidden shadow-inner">
-           <span className="text-3xl">🌿</span>
+        <div className="w-20 h-20 bg-natural-morning rounded-3xl flex items-center justify-center mx-auto mb-10 overflow-hidden shadow-inner text-natural-accent">
+           <Activity size={40} strokeWidth={2.5} />
         </div>
         
         <h1 className="text-4xl font-serif text-[#5C634D] mb-4">
           Willkommen
         </h1>
         <p className="text-natural-muted font-light mb-14 text-sm leading-relaxed italic">
-          Verbinde dich mit deiner Energie und finde Klarheit in deinem Alltag.
+          Tracke deine Energielevel und verstehe deine Müdigkeit besser.
         </p>
 
         <button
