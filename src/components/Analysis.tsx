@@ -18,7 +18,7 @@ export function Analysis() {
     const q = query(
       collection(db, 'users', user.uid, 'entries'),
       where('date', '>=', sevenDaysAgo),
-      orderBy('date', 'asc'),
+      orderBy('date', 'desc'),
       limit(7)
     );
 

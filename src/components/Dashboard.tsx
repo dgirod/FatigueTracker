@@ -18,7 +18,7 @@ export function Dashboard() {
     const q = query(
       collection(db, 'users', user.uid, 'entries'),
       where('date', '>=', sevenDaysAgo),
-      orderBy('date', 'asc'),
+      orderBy('date', 'desc'),
       limit(7)
     );
 
@@ -51,7 +51,7 @@ export function Dashboard() {
     return <div className="text-center py-24 text-natural-muted animate-pulse font-serif italic">Deine Übersicht wird vorbereitet...</div>;
   }
 
-  const lastEntry = entries[entries.length - 1];
+  const todayEntry = entries[0];
   const hasData = entries.length > 0;
   const streak = entries.length;
 
@@ -64,8 +64,8 @@ export function Dashboard() {
                {streak} Tage Achtsamkeit
              </div>
           </div>
-          <h1 className="text-5xl md:text-7xl font-serif text-[#5C634D] lowercase leading-tight">deine woche.</h1>
-          <p className="text-natural-muted font-light max-w-sm">Beobachte die Rhythmen deines Körpers und finde deine Balance.</p>
+          <h1 className="text-5xl md:text-7xl font-serif text-[#5C634D] lowercase leading-tight">deine übersicht.</h1>
+          <p className="text-natural-muted font-light max-w-sm">Dein aktuelles Befinden und die Entwicklung der letzten Tage.</p>
         </div>
         
         {hasData && (
@@ -76,7 +76,7 @@ export function Dashboard() {
             >
               <span className="text-[10px] text-natural-muted font-black uppercase tracking-widest mb-3">Energie</span>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-serif text-natural-accent">{lastEntry.morning?.energy || '-'}</span>
+                <span className="text-4xl font-serif text-natural-accent">{todayEntry.morning?.energy || '-'}</span>
                 <span className="text-xs text-natural-muted">/ 10</span>
               </div>
             </motion.div>
@@ -85,7 +85,7 @@ export function Dashboard() {
               className="bg-white p-6 rounded-[2.5rem] border border-[#E5E5DC] shadow-sm flex flex-col items-center min-w-[140px]"
             >
               <span className="text-[10px] text-natural-muted font-black uppercase tracking-widest mb-3">Stimmung</span>
-              <span className="text-4xl scale-125">{smileys[lastEntry.evening?.mood || lastEntry.morning?.mood || 0] || '—'}</span>
+              <span className="text-4xl scale-125">{smileys[todayEntry.evening?.mood || todayEntry.noon?.mood || todayEntry.morning?.mood || 0] || '—'}</span>
             </motion.div>
           </div>
         )}
@@ -193,7 +193,7 @@ export function Dashboard() {
                     className="flex flex-col items-center gap-4"
                   >
                     <span className="text-[10px] font-bold text-natural-muted uppercase">
-                      {i === chartData.length - 1 ? 'Heute' : d.date}
+                      {i === 0 ? 'Heute' : d.date}
                     </span>
                     <div className="flex flex-col gap-2 w-full p-2 bg-natural-bg/30 rounded-[2rem] border border-[#E5E5DC]/50 shadow-inner">
                       <div className="flex flex-col items-center gap-1">
