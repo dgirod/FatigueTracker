@@ -45,6 +45,9 @@ export function Layout({ children, activeView, setView }: LayoutProps) {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
         {children}
+        <div className="mt-20 py-8 text-center border-t border-[#E5E5DC]/30">
+          <span className="text-[10px] uppercase tracking-widest text-natural-muted/40 font-bold">Version 1.0.4</span>
+        </div>
       </main>
 
       <nav className="fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-[#E5E5DC] py-4 px-6 flex justify-around sm:hidden z-50">
