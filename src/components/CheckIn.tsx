@@ -3,7 +3,7 @@ import { db } from '../lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { format } from 'date-fns';
-import { Sun, Coffee, Moon, Zap, Battery, Check, LayoutDashboard } from 'lucide-react';
+import { Sun, Coffee, Moon, Zap, Battery, Check, LayoutDashboard, Sunrise } from 'lucide-react';
 import { motion } from 'motion/react';
 
 enum OperationType {
@@ -119,12 +119,23 @@ export function CheckIn({ onComplete }: CheckInProps) {
     }
   };
 
-  const MoodRating = ({ value, onChange, label, compact = false }: any) => {
+  const MoodRating = ({ value, onChange, label, compact = false, icon: Icon, selectedBgColor = 'bg-natural-morning', isActive = false }: any) => {
     const smileys = ['😞', '🙁', '😐', '🙂', '😊'];
+    const hasValue = value !== undefined && value !== null;
+
     return (
-      <div className={`space-y-4 ${compact ? 'flex-1' : 'mb-10'}`}>
-        <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-natural-muted text-center">{label}</span>
-        <div className={`flex justify-between items-center bg-white rounded-[2.5rem] shadow-sm border border-[#E5E5DC] ${compact ? 'p-3 gap-1' : 'p-6'}`}>
+      <div className={`space-y-4 ${compact ? 'flex-1' : 'mb-10'} transition-all duration-300 ${isActive ? 'scale-105' : 'opacity-70'}`}>
+        <div className="flex items-center justify-center gap-2">
+          {Icon && <Icon size={12} className={isActive ? 'text-natural-accent' : 'text-natural-muted'} />}
+          <span className={`block text-[10px] font-black uppercase tracking-[0.2em] text-center ${isActive ? 'text-natural-accent' : 'text-natural-muted'}`}>{label}</span>
+        </div>
+        <div className={`flex justify-between items-center transition-all duration-500 rounded-[2.5rem] shadow-sm border-2 ${
+          hasValue 
+            ? `${selectedBgColor} ${isActive ? 'border-natural-accent' : 'border-transparent'}` 
+            : isActive
+              ? 'bg-white border-natural-accent'
+              : 'bg-white border-[#E5E5DC]'
+        } ${compact ? 'p-3 gap-1' : 'p-6'}`}>
           {smileys.map((smiley, index) => (
             <button
               key={index}
@@ -210,7 +221,7 @@ export function CheckIn({ onComplete }: CheckInProps) {
         <StepButton 
           id="morning" 
           label="Morgen" 
-          icon={Sun} 
+          icon={Sunrise} 
           active={activeStep === 'morning'} 
           bgColor="bg-natural-morning" 
           textColor="text-[#5C634D]"
@@ -219,7 +230,7 @@ export function CheckIn({ onComplete }: CheckInProps) {
         <StepButton 
           id="noon" 
           label="Mittag" 
-          icon={Coffee} 
+          icon={Sun} 
           active={activeStep === 'noon'} 
           bgColor="bg-natural-noon" 
           textColor="text-[#7A8C69]"
@@ -243,18 +254,27 @@ export function CheckIn({ onComplete }: CheckInProps) {
             label="Morgen" 
             value={morningData.mood} 
             onChange={(v: number) => setMorningData({ ...morningData, mood: v })} 
+            icon={Sunrise}
+            selectedBgColor="bg-natural-morning"
+            isActive={activeStep === 'morning'}
             compact
           />
           <MoodRating 
             label="Mittag" 
             value={noonData.mood} 
             onChange={(v: number) => setNoonData({ ...noonData, mood: v })} 
+            icon={Sun}
+            selectedBgColor="bg-natural-noon"
+            isActive={activeStep === 'noon'}
             compact
           />
           <MoodRating 
             label="Abend" 
             value={eveningData.mood} 
             onChange={(v: number) => setNoonEveningData({ ...eveningData, mood: v })} 
+            icon={Moon}
+            selectedBgColor="bg-natural-evening"
+            isActive={activeStep === 'evening'}
             compact
           />
         </div>
@@ -288,7 +308,7 @@ export function CheckIn({ onComplete }: CheckInProps) {
             label="Aktuelle Müdigkeit" 
             value={noonData.tiredness} 
             onChange={(v: number) => setNoonData({ ...noonData, tiredness: v })} 
-            icon={Coffee}
+            icon={Sun}
           />
         )}
 
