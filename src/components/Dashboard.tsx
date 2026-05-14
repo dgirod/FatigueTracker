@@ -55,6 +55,15 @@ export function Dashboard() {
   const hasData = entries.length > 0;
   const streak = entries.length;
 
+  const getLatestMoodInfo = (entry: any) => {
+    if (entry?.evening?.mood) return { mood: entry.evening.mood, color: 'bg-natural-evening', border: 'border-[#EBD6C5]' };
+    if (entry?.noon?.mood) return { mood: entry.noon.mood, color: 'bg-natural-noon', border: 'border-[#D8E0D1]/50' };
+    if (entry?.morning?.mood) return { mood: entry.morning.mood, color: 'bg-natural-morning', border: 'border-[#D8E0D1]' };
+    return { mood: 0, color: 'bg-white', border: 'border-[#E5E5DC]' };
+  };
+
+  const latestMood = getLatestMoodInfo(todayEntry);
+
   return (
     <div className="space-y-12">
       <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
@@ -82,10 +91,10 @@ export function Dashboard() {
             </motion.div>
             <motion.div 
               whileHover={{ y: -5 }}
-              className="bg-white p-6 rounded-[2.5rem] border border-[#E5E5DC] shadow-sm flex flex-col items-center min-w-[140px]"
+              className={`${latestMood.color} p-6 rounded-[2.5rem] border ${latestMood.border} shadow-sm flex flex-col items-center min-w-[140px] transition-all duration-500`}
             >
               <span className="text-[10px] text-natural-muted font-black uppercase tracking-widest mb-3">Stimmung</span>
-              <span className="text-4xl scale-125">{smileys[todayEntry.evening?.mood || todayEntry.noon?.mood || todayEntry.morning?.mood || 0] || '—'}</span>
+              <span className="text-4xl scale-125">{smileys[latestMood.mood] || '—'}</span>
             </motion.div>
           </div>
         )}

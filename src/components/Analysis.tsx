@@ -3,9 +3,9 @@ import { db } from '../lib/firebase';
 import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { format, subDays, startOfToday } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'motion/react';
-import { Activity, Brain, Moon, Zap, Sparkles } from 'lucide-react';
+import { Activity, Brain, Moon, Zap, Sparkles, TrendingUp, Clock } from 'lucide-react';
 
 export function Analysis() {
   const { user } = useAuth();
@@ -18,7 +18,7 @@ export function Analysis() {
     const q = query(
       collection(db, 'users', user.uid, 'entries'),
       where('date', '>=', sevenDaysAgo),
-      orderBy('date', 'desc'),
+      orderBy('date', 'asc'),
       limit(7)
     );
 
@@ -34,13 +34,14 @@ export function Analysis() {
     return unsubscribe;
   }, [user]);
 
-  const analysisData = entries.map(e => ({
+  // Transform data for the 7-day terrain
+  const terrainData = entries.map(e => ({
     name: format(new Date(e.date), 'EEE'),
-    müdigkeit: ((e.noon?.tiredness || 0) + (e.evening?.tiredness || 0)) / (e.noon && e.evening ? 2 : 1) || 0,
-    energie: e.morning?.energy || 0,
-    anstrengung: e.evening?.strenuousness || 0,
-    erholung: e.morning?.recovery || 0,
-    mood: e.evening?.mood || e.morning?.mood || 0,
+    date: e.date,
+    morning: e.morning?.energy || 0,
+    noon: 10 - (e.noon?.tiredness || 5), // Convert tiredness to an "energy" scalar for the chart
+    evening: 10 - (e.evening?.tiredness || 5),
+    avg: ((e.morning?.energy || 0) + (10 - (e.noon?.tiredness || 5)) + (10 - (e.evening?.tiredness || 5))) / 3
   }));
 
   const smileys = ['', '😞', '🙁', '😐', '🙂', '😊'];
@@ -64,7 +65,7 @@ export function Analysis() {
         <StatCard label="Ø Energie" value={avgEnergy.toFixed(1)} icon={Zap} color="bg-natural-morning text-natural-accent" />
         <StatCard label="Ø Müdigkeit" value={avgTiredness.toFixed(1)} icon={Moon} color="bg-natural-noon text-natural-accent" />
         <StatCard label="Aktivität" value={entries.length.toString()} icon={Activity} color="bg-natural-evening text-[#B37F5A]" />
-        <StatCard label="Fokus-Zustand" value={avgEnergy > 6 ? 'Klar' : 'Ruhig'} icon={Brain} color="bg-white text-natural-muted border border-[#E5E5DC]" />
+        <StatCard label="Trend" value={entries.length > 1 ? (terrainData[entries.length-1].avg > terrainData[0].avg ? '↑' : '↓') : '—'} icon={TrendingUp} color="bg-white text-natural-muted border border-[#E5E5DC]" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -74,16 +75,26 @@ export function Analysis() {
           className="lg:col-span-2 bg-white p-10 md:p-14 rounded-[4rem] border border-[#E5E5DC] shadow-sm"
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-16 gap-6">
-            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-natural-muted">Wochen-Rhythmus</h3>
-            <div className="flex gap-4 text-[10px] font-black uppercase tracking-widest">
-              <span className="flex items-center gap-2 text-natural-accent"><div className="w-2.5 h-2.5 rounded-full bg-natural-accent"/> Vitalität</span>
-              <span className="flex items-center gap-2 text-[#EBD6C5]"><div className="w-2.5 h-2.5 rounded-full bg-[#EBD6C5]"/> Intensität</span>
+            <div className="space-y-1">
+              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-natural-muted">7-Tage Energie-Gelände</h3>
+              <p className="text-[10px] text-natural-muted italic">Die Bandbreite deiner Energie über den Tag hinweg</p>
+            </div>
+            <div className="flex flex-wrap gap-4 text-[10px] font-black uppercase tracking-widest">
+              <span className="flex items-center gap-2 text-natural-accent"><div className="w-2 h-2 rounded-full bg-natural-morning"/> Morgen</span>
+              <span className="flex items-center gap-2 text-[#7A8C69]"><div className="w-2 h-2 rounded-full bg-natural-noon"/> Mittag</span>
+              <span className="flex items-center gap-2 text-[#B37F5A]"><div className="w-2 h-2 rounded-full bg-natural-evening"/> Abend</span>
             </div>
           </div>
 
           <div className="h-[400px] -ml-8">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analysisData} barGap={14}>
+              <AreaChart data={terrainData}>
+                <defs>
+                  <linearGradient id="colorMorning" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#DDE6D5" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#DDE6D5" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F8F8F4" />
                 <XAxis 
                   dataKey="name" 
@@ -94,16 +105,12 @@ export function Analysis() {
                 />
                 <YAxis hide domain={[0, 10]} />
                 <Tooltip 
-                  cursor={{ fill: '#FDFCF9', opacity: 0.5 }}
                   contentStyle={{ borderRadius: '24px', border: '1px solid #E5E5DC', background: '#FFF', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', fontSize: '11px', fontWeight: 'bold' }}
                 />
-                <Bar dataKey="energie" fill="#7A8C69" radius={[12, 12, 0, 0]} barSize={36}>
-                   {analysisData.map((d, index) => (
-                      <Cell key={`cell-${index}`} fill={d.energie > 7 ? '#7A8C69' : '#8A9B79'} />
-                   ))}
-                </Bar>
-                <Bar dataKey="anstrengung" fill="#EBD6C5" radius={[12, 12, 0, 0]} barSize={36} />
-              </BarChart>
+                <Area type="monotone" dataKey="morning" stroke="#7A8C69" fillOpacity={1} fill="url(#colorMorning)" strokeWidth={3} />
+                <Area type="monotone" dataKey="noon" stroke="#5C634D" fillOpacity={0.1} fill="#5C634D" strokeWidth={2} strokeDasharray="5 5" />
+                <Area type="monotone" dataKey="evening" stroke="#B37F5A" fillOpacity={0.1} fill="#B37F5A" strokeWidth={2} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </motion.div>
@@ -112,29 +119,59 @@ export function Analysis() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-natural-morning p-10 rounded-[3.5rem] border border-[#D8E0D1]"
+            className="bg-natural-bg p-8 rounded-[3.5rem] border border-[#E5E5DC]"
           >
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-natural-accent mb-8 text-center text-opacity-60">Stimmungstrend</h4>
+            <div className="flex items-center gap-3 mb-8">
+              <Clock size={16} className="text-natural-accent" />
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-natural-accent">Intra-Day Verlauf</h4>
+            </div>
+            
             <div className="space-y-6">
-              {analysisData.map((d, i) => (
-                <div key={i} className="flex items-center justify-between group">
-                  <span className="text-[10px] font-bold text-natural-muted uppercase w-8">{d.name}</span>
-                  <div className="flex-1 h-px bg-natural-accent/10 mx-4" />
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl transition-all group-hover:scale-125 ${d.mood ? 'bg-white shadow-sm' : 'bg-white/30 opacity-50'}`}>
-                    {d.mood ? smileys[d.mood] : '—'}
+              {[...entries].reverse().slice(0, 3).map((e, i) => {
+                const dayData = [
+                  { time: 'Morg', energy: e.morning?.energy || 5 },
+                  { time: 'Mitt', energy: 10 - (e.noon?.tiredness || 5) },
+                  { time: 'Abend', energy: 10 - (e.evening?.tiredness || 5) }
+                ];
+                
+                return (
+                  <div key={i} className="bg-white p-6 rounded-[2rem] border border-[#E5E5DC] shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] font-bold text-natural-muted uppercase">
+                        {i === 0 ? 'Heute' : format(new Date(e.date), 'EEEE')}
+                      </span>
+                      <div className="flex gap-1">
+                        {smileys[e.evening?.mood || e.noon?.mood || e.morning?.mood || 0]}
+                      </div>
+                    </div>
+                    <div className="h-20 -mx-4">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={dayData}>
+                          <Line 
+                            type="monotone" 
+                            dataKey="energy" 
+                            stroke="#7A8C69" 
+                            strokeWidth={3} 
+                            dot={{ r: 4, fill: '#7A8C69', strokeWidth: 0 }} 
+                          />
+                          <YAxis domain={[0, 10]} hide />
+                          <XAxis dataKey="time" hide />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
 
           <div className="bg-white p-10 rounded-[3.5rem] border border-[#E5E5DC] shadow-sm flex flex-col items-center text-center">
-            <span className="text-[10px] uppercase font-black tracking-widest text-natural-muted mb-6">Wochen-Status</span>
+            <span className="text-[10px] uppercase font-black tracking-widest text-natural-muted mb-6">Erkenntnis der Woche</span>
             <div className="w-16 h-16 rounded-3xl bg-natural-bg border border-[#E5E5DC] flex items-center justify-center text-2xl mb-4">
               ✨
             </div>
             <p className="text-xs font-serif text-natural-accent leading-relaxed">
-              Deine Energie-Balance war diese Woche {avgEnergy > avgTiredness ? 'positiv' : 'ausgeglichen'}. Ein guter Zeitpunkt für Reflexion.
+              Deine Energie-Kurve verläuft meist {avgEnergy > 6 ? 'ruhig und stabil' : 'dynamisch'}. Beobachte, wie Pausen deinen Mittag beeinflussen.
             </p>
           </div>
         </div>
@@ -159,4 +196,3 @@ function StatCard({ label, value, icon: Icon, color }: any) {
     </motion.div>
   );
 }
-
