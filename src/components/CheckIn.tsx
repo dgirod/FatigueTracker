@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
-import { format } from 'date-fns';
-import { Sun, Coffee, Moon, Zap, Battery, Check, LayoutDashboard, Sunrise } from 'lucide-react';
-import { motion } from 'motion/react';
+import { format, subDays, addDays, isSameDay, parseISO, startOfToday } from 'date-fns';
+import { Sun, Coffee, Moon, Zap, Battery, Check, LayoutDashboard, Sunrise, ChevronLeft, ChevronRight, Calendar as CalendarIcon, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 enum OperationType {
   CREATE = 'create',
@@ -31,7 +31,11 @@ interface CheckInProps {
 
 export function CheckIn({ onComplete }: CheckInProps) {
   const { user } = useAuth();
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const [currentDate, setCurrentDate] = useState(startOfToday());
+  const selectedDateStr = format(currentDate, 'yyyy-MM-dd');
+  const isToday = isSameDay(currentDate, startOfToday());
+  
+  const [showCalendar, setShowCalendar] = useState(false);
   const [activeStep, setActiveStep] = useState<'morning' | 'noon' | 'evening'>(() => {
     const hour = new Date().getHours();
     if (hour < 11) return 'morning';
@@ -47,37 +51,43 @@ export function CheckIn({ onComplete }: CheckInProps) {
 
   useEffect(() => {
     if (!user) return;
-    const fetchToday = async () => {
+    const fetchData = async () => {
+      // Reset state first to avoid showing old data while loading
+      setMorningData({ recovery: 5, energy: 5, mood: 3 });
+      setNoonData({ tiredness: 5, mood: 3 });
+      setNoonEveningData({ tiredness: 5, strenuousness: 5, mood: 3 });
+      setExistingData(null);
+
       try {
-        const docRef = doc(db, 'users', user.uid, 'entries', today);
+        const docRef = doc(db, 'users', user.uid, 'entries', selectedDateStr);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
           setExistingData(data);
-          if (data.morning) setMorningData({ ...morningData, ...data.morning });
-          if (data.noon) setNoonData({ ...noonData, ...data.noon });
-          if (data.evening) setNoonEveningData({ ...eveningData, ...data.evening });
+          if (data.morning) setMorningData((prev) => ({ ...prev, ...data.morning }));
+          if (data.noon) setNoonData((prev) => ({ ...prev, ...data.noon }));
+          if (data.evening) setNoonEveningData((prev) => ({ ...prev, ...data.evening }));
         }
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, `users/${user.uid}/entries/${today}`);
+        handleFirestoreError(error, OperationType.GET, `users/${user.uid}/entries/${selectedDateStr}`);
       }
     };
-    fetchToday();
-  }, [user, today]);
+    fetchData();
+  }, [user, selectedDateStr]);
 
   const saveMorning = async () => {
     if (!user) return;
     setSubmitting(true);
     try {
-      const docRef = doc(db, 'users', user.uid, 'entries', today);
+      const docRef = doc(db, 'users', user.uid, 'entries', selectedDateStr);
       await setDoc(docRef, {
         userId: user.uid,
-        date: today,
+        date: selectedDateStr,
         morning: { ...morningData, updatedAt: serverTimestamp() }
       }, { merge: true });
       setExistingData((prev: any) => ({ ...prev, morning: morningData }));
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/entries/${today}`);
+      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/entries/${selectedDateStr}`);
     } finally {
       setSubmitting(false);
     }
@@ -87,15 +97,15 @@ export function CheckIn({ onComplete }: CheckInProps) {
     if (!user) return;
     setSubmitting(true);
     try {
-      const docRef = doc(db, 'users', user.uid, 'entries', today);
+      const docRef = doc(db, 'users', user.uid, 'entries', selectedDateStr);
       await setDoc(docRef, {
         userId: user.uid,
-        date: today,
+        date: selectedDateStr,
         noon: { ...noonData, updatedAt: serverTimestamp() }
       }, { merge: true });
       setExistingData((prev: any) => ({ ...prev, noon: noonData }));
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/entries/${today}`);
+      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/entries/${selectedDateStr}`);
     } finally {
       setSubmitting(false);
     }
@@ -105,18 +115,70 @@ export function CheckIn({ onComplete }: CheckInProps) {
     if (!user) return;
     setSubmitting(true);
     try {
-      const docRef = doc(db, 'users', user.uid, 'entries', today);
+      const docRef = doc(db, 'users', user.uid, 'entries', selectedDateStr);
       await setDoc(docRef, {
         userId: user.uid,
-        date: today,
+        date: selectedDateStr,
         evening: { ...eveningData, updatedAt: serverTimestamp() }
       }, { merge: true });
       setExistingData((prev: any) => ({ ...prev, evening: eveningData }));
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/entries/${today}`);
+      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/entries/${selectedDateStr}`);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const goToPreviousDay = () => setCurrentDate(prev => subDays(prev, 1));
+  const goToNextDay = () => !isToday && setCurrentDate(prev => addDays(prev, 1));
+
+  const Calendar = () => {
+    const days = [];
+    const today = startOfToday();
+    // Show last 30 days for simplicity in "mini-calendar"
+    for (let i = 0; i < 30; i++) {
+      days.push(subDays(today, i));
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="absolute top-24 left-1/2 -translate-x-1/2 w-[320px] bg-white rounded-[2.5rem] shadow-2xl border border-[#E5E5DC] p-8 z-[60]"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <span className="text-[10px] font-black uppercase tracking-widest text-natural-muted">Datum wählen</span>
+          <button onClick={() => setShowCalendar(false)} className="text-natural-muted hover:text-natural-accent">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="grid grid-cols-5 gap-3">
+          {days.map((day) => {
+            const isSelected = isSameDay(day, currentDate);
+            const isTodayDay = isSameDay(day, today);
+            return (
+              <button
+                key={day.toISOString()}
+                onClick={() => {
+                  setCurrentDate(day);
+                  setShowCalendar(false);
+                }}
+                className={`py-3 rounded-2xl flex flex-col items-center gap-1 transition-all ${
+                  isSelected 
+                    ? 'bg-natural-accent text-white shadow-md' 
+                    : 'bg-natural-bg text-[#5C634D] hover:bg-[#E5E5DC]'
+                }`}
+              >
+                <span className="text-[8px] font-black uppercase opacity-60">{format(day, 'EEE')}</span>
+                <span className="text-sm font-serif font-bold">{format(day, 'd')}</span>
+                {isTodayDay && <div className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white' : 'bg-natural-accent'}`} />}
+              </button>
+            );
+          })}
+        </div>
+      </motion.div>
+    );
   };
 
   const MoodRating = ({ value, onChange, label, compact = false, icon: Icon, selectedBgColor = 'bg-natural-morning', isActive = false }: any) => {
@@ -209,13 +271,47 @@ export function CheckIn({ onComplete }: CheckInProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto pb-12">
-      <div className="mb-14 text-center">
-        <h2 className="text-4xl font-serif text-[#5C634D] mb-3">Tagebuch Eintrag</h2>
-        <p className="text-natural-muted uppercase tracking-[0.2em] text-[10px] font-black">
-          {format(new Date(), 'EEEE, d. MMMM yyyy')}
-        </p>
+    <div className="max-w-2xl mx-auto pb-12 relative">
+      <div className="mb-14 flex items-center justify-between gap-4">
+        <button 
+          onClick={goToPreviousDay}
+          className="w-12 h-12 rounded-full bg-white border border-[#E5E5DC] flex items-center justify-center text-natural-muted hover:text-natural-accent hover:border-natural-accent transition-all active:scale-95"
+          title="Vorheriger Tag"
+        >
+          <ChevronLeft size={24} />
+        </button>
+
+        <div className="text-center group cursor-pointer relative" onClick={() => setShowCalendar(!showCalendar)}>
+          <div className="flex flex-col items-center">
+            <h2 className="text-4xl font-serif text-[#5C634D] mb-1 transition-colors group-hover:text-natural-accent select-none">
+              Tagebuch Eintrag
+            </h2>
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[#E5E5DC] group-hover:border-natural-accent group-hover:bg-natural-bg/30 transition-all select-none">
+              <CalendarIcon size={12} className="text-natural-accent" />
+              <p className="text-natural-muted uppercase tracking-[0.2em] text-[10px] font-black">
+                {format(currentDate, 'EEEE, d. MMMM yyyy')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          onClick={goToNextDay}
+          disabled={isToday}
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+            isToday 
+              ? 'bg-[#F2F2EB]/50 border border-[#E5E5DC] text-[#E5E5DC] cursor-not-allowed' 
+              : 'bg-white border border-[#E5E5DC] text-natural-muted hover:text-natural-accent hover:border-natural-accent'
+          }`}
+          title="Nächster Tag"
+        >
+          <ChevronRight size={24} />
+        </button>
       </div>
+
+      <AnimatePresence>
+        {showCalendar && <Calendar />}
+      </AnimatePresence>
 
       <div className="flex gap-4 mb-16 p-2 bg-[#F2F2EB]/50 rounded-[3rem] border border-[#E5E5DC]">
         <StepButton 
