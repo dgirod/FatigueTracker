@@ -1,3 +1,4 @@
+name: fatiguetracker
 version: '3.8'
 services:
   app:
@@ -7,4 +8,14 @@ services:
     environment:
       - NODE_ENV=production
       # Füge hier deine Firebase-Configs hinzu, falls du sie nicht im Code hartkodiert hast
+    restart: always
+  webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile.webhook
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/FatigueTracker:/repo
     restart: always
