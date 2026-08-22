@@ -20,3 +20,5 @@ View your app in AI Studio: https://ai.studio/apps/c49886dd-0919-43a3-aede-122df
    `npm run dev`
 
 <!-- webhook auto-deploy test 2026-08-22 -->
+
+<!-- verifying async webhook fix -->
